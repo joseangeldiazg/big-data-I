@@ -6,7 +6,7 @@ var mapCode = function() {
             	[
                 	{
                     "name": this.name,
-                    "adress": this.adress,
+                    "address": this.address,
                     "lat":  this.adress.coord[0],
                     "lon":  this.adress.coord[1],
                 }
@@ -73,13 +73,13 @@ var mapCode = function() {
 	}
 
 
-	db.runCommand({
-	    mapReduce: "restaurants",
-	    map: mapCode,
-	    reduce: reduceCode,
-	    finalize: finalize,
-	    query: { "grades.grade": { $eq: "A" } },
-	    out: { merge: "restaurantes_proximos" }
-	});
+	db.restaurants.mapReduce(
+			mapCode,
+			reduceCode,
+			{
+				  out: { merge: "rest_mapreduce" },
+					query: { "grades.grade": "A" },
+					finalize: finalize
+			});
 
 	db.restauranrtes_proximos.find().pretty();
