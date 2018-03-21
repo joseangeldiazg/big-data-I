@@ -1,4 +1,4 @@
-var mapCode = function() {
+var mapCode = function Map() {
 		emit(
    	   		this.cuisine,
         	{
@@ -6,16 +6,15 @@ var mapCode = function() {
             	[
                 	{
                     "name": this.name,
-                    "address": this.address,
-                    "lat":  this.adress.coord[0],
-                    "lon":  this.adress.coord[1],
+                    "lat":  this.address.coord[0],
+                    "lon":  this.address.coord[1],
+										"address": this.address.street,
                 }
             ]
         	}
     	);
 	}
-
-	var reduceCode = function(key, values) {
+	var reduceCode = function Reduce(key, values) {
 	  var reduced = {
 	        "data": []
 	    };
@@ -29,19 +28,15 @@ var mapCode = function() {
 	}
 
 
-	var finalize =  function (key, reduced) {
+	var finalizeCode =  function Finalize(key, reduced) {
 		if (reduced.data.length == 1) {
 			return {
 	            "message" : "Este tipo de cocina solo contiene un restaurante"
 	        };
 		}
 		var min_dist = 999999999999;
-		var restaurante1 = {
-	        "name": ""
-	    };
-		var restaurante2 = {
-	        "name": ""
-	    };
+		var restaurante1 = { "name": "" , "address": ""};
+		var restaurante2 = { "name": "" , "address": ""};
 		var r1;
 		var r2;
 		var d;
@@ -66,20 +61,20 @@ var mapCode = function() {
 		}
 		return {
 	        "restaurante1": restaurante1.name,
+					"Direccion_restaurante_1": restaurante1.address,
 	        "restaurante2": restaurante2.name,
+					"Direccion_restaurante_2": restaurante2.address,
 	        "evaluations": contador,
 	        "dist": Math.sqrt(min_dist)
 	    };
 	}
+	db.runCommand({
+		 mapReduce: "restaurants",
+		 map: mapCode,
+		 reduce: reduceCode,
+		 finalize: finalizeCode,
+		 query: { "grades.grade": 'A' },
+		 out: { merge: "rest_mapreduce" },
+		 });
 
-
-	db.restaurants.mapReduce(
-			mapCode,
-			reduceCode,
-			{
-				  out: { merge: "rest_mapreduce" },
-					query: { "grades.grade": "A" },
-					finalize: finalize
-			});
-
-	db.restauranrtes_proximos.find().pretty();
+	db.rest_mapreduce.find().pretty();
