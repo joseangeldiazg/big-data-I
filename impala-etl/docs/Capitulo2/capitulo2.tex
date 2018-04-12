@@ -1,0 +1,34 @@
+%---------------------------------------------------
+% Nombre: capitulo2.tex  
+% 
+% Texto del capítulo 2
+%---------------------------------------------------
+
+\chapter{Preprocesado}
+\label{preprocesado}
+
+El preprocesado de datos es una de las tareas más importantes a las que un científico de datos debe enfrentarse. Esta tarea es de vital importancia y puede desembocar en el éxito o el fracaso de los modelos predictivos que se generen sobre los datos. En este capítulo veremos las técnicas de preprocesado aplicadas sobre nuestros datos. 
+
+\section{Integración}
+
+El primer paso es la lectura de datos. Estos vienen en formato texto, por lo que para una correcta lectura deberemos pasar los factores y strings que correspondan a numéricos ya que de otro modo los posibles valores perdidos se etiquetaran como \textbf{cadenas vacías} y podrán repercutir en error. Nos quedamos por tanto en primera instancia con todos los datos numéricos y la fecha de su captación. El motivo de mantener todos los numéricos es mejorar el proceso siguiente de imputación de valores perdidos. 
+
+\section{Valores perdidos}
+
+Para la imputación de valores perdidos primero usando la función \textit{sum(is.na) } obtenemos el número de valores perdidos de nuestro variable Tmax, el resultado es 83, por lo que es un número muy a tener en cuenta y que deberá ser predicho. Para la predicción de los valores perdidos nos apoyamos en los demás datos numéricos para hacer regresiones y predicciones, antes de ello, usamos un gráfico de patrón de perdidos para ver si tenemos alguna idea de que otras variables podremos usar para su predicción. El resultado de este gráfico puede verse en la figura \ref{perdidos}.
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/perdidos.png}
+		\caption{Patrón e histograma de valores perdidos.}
+	\label{perdidos}
+\end{figure}
+
+Acorde a los resultados de la figura anterior, no podemos concluir que haya un patrón claro pero si podemos asegurar que cuando Tmax tiene un valor perdido las demás también lo tendrán con probabilidad por lo que utilizar regresiones será quizá mala solución, por ello nos decantaremos por el método \textbf{pmm} del paquete MICE. Tras lo cual, tendremos el dataset con una cantidad 0 de valores perdidos en Tmax. 
+
+\section{Agregación}
+
+Este paso del preprocesado es solo necesario para la solución del problema mensual. Para ello, usaremos el comando aggregate y la función max para agregar para cada mes de cada año la mayor temperatura registrada de manera que podamos realizar predicciones y modelado de serie a nivel mensual. Para poder realizar esto, previamente hemos pasado la fecha de tipo string a tipo date y tras ello, hemos eliminado el día de la fecha de manera que podemos agregar por las parejas iguales de mes y año. 
+\pagebreak
+\clearpage
+%---------------------------------------------------
