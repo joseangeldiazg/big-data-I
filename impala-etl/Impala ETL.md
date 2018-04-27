@@ -40,7 +40,7 @@ Una vez creada la base de datos debemos cargar los datos en la misma, para ello,
 	 
 Si todo a ido bien, observaremos que la base de datos ahora está en el hdfs de hadoop, por lo que podremos cargar los datos en una tabla, para ello cargamos el impala-shell y usamos (comando USE) nuestra base de datos creada anteriormente. 	
 	
-	CREATE TABLE IF NOT EXISTS Complaints(DateReceived STRING, ProductName STRING, SubProduct STRING,Issue STRING, SubIssue STRING,ConsumerComplaintNarrative STRING,CompanyPublicResponse String, Company STRING, StateName STRING,ZipCode INT, Tags STRING, ConsumerConsentProvided STRING,SubmittedVia STRING, DateSenttoCompany STRING, CompanyResponsetoConsumer STRING, TimelyResponse STRING,ConsumerDisputed STRING, ComplaintID INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\,' STORED AS TEXTFILE;	 
+	CREATE TABLE IF NOT EXISTS Complaints(DateReceived STRING, ProductName STRING, SubProduct STRING,Issue STRING, SubIssue STRING,ConsumerComplaintNarrative STRING,CompanyPublicResponse String, Company STRING, StateName STRING,ZipCode INT, Tags STRING, ConsumerConsentProvided STRING,SubmittedVia STRING, DateSenttoCompany STRING, CompanyResponsetoConsumer STRING, TimelyResponse STRING,ConsumerDisputed STRING, ComplaintID INT) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\,' STORED AS TEXTFILE;
 	 
 Tras esto  cargamos los datos:
 
@@ -53,7 +53,7 @@ En este punto, realizaremos las consultas sobre la base de datos para ello, nos 
 
 ### Proceso exploratorio
 
-Somos nuevos en la compañia y queremos saber:
+Somos nuevos en la compañía y queremos saber:
 
 **¿Cuales son las posibles fuentes de queja de nuestros usuarios?**
 
@@ -66,9 +66,9 @@ Parace que la salida ofrece más resultados de los que cabría esperar, por lo q
 	
  Parece que así ya sabemos cuales son las más comunes, igualmente siguen apareciendo algunas que no nos interesan por lo que utilizaremos WHERE para eliminarlas y ordenaremos para crear un ranking de las más usadas. 
 
-	SELECT COUNT(*), SubmittedVia FROM complaints GROUP BY SubmittedVia WHERE SubmittedVia IN ('Web', 'Phone', 'Fax', 'Postal mail') HAVING COUNT(*) > 300 ORDER BY 1 DESC;	
+	SELECT COUNT(*), SubmittedVia FROM complaints GROUP BY SubmittedVia WHERE SubmittedVia IN ('Web', 'Phone', 'Fax', 'Postal mail') HAVING COUNT(*) > 300 ORDER BY 1 DESC;Close	
 	
-Ya sabemos cuales son aquellos métodos más usados para comunicarse con la empresa, pero ahora se nos encarga obtener aquellos estados en los cuales la gente usa menos la web para comunicarse con la empresa con el fin de potenciar la publicidad de una nueva aplicación web de la compañia. 
+Ya sabemos cuales son aquellos métodos más usados para comunicarse con la empresa, pero ahora se nos encarga obtener aquellos estados en los cuales la gente usa menos la web para comunicarse con la empresa con el fin de potenciar la publicidad de una nueva aplicación web de la compañía. 
 
 	SELECT COUNT(*), SatateName FROM complaints GROUP BY SubmittedVia WHERE SubmittedVia = 'Web' HAVING COUNT(*) < 10;	
 		
@@ -79,7 +79,7 @@ Esto nos ayuda poco, pues podemos comproabar que son casos aislados de soldados 
 	SELECT COUNT(*), SatateName FROM complaints GROUP BY SubmittedVia WHERE SubmittedVia = 'Web' HAVING COUNT(*) BETWEEN 100 and 200;
 
 
-El resultado de esta consulta nos dice cuales son aquellos estados que menos usan la web, por lo que aqui deberiamos potenciar nuestro producto, si los analizamos, excepto Delawere, los demás son estados de predominio rural algo que era de esperar.
+El resultado de esta consulta nos dice cuales son aquellos estados que menos usan la web, por lo que aquí deberíamos potenciar nuestro producto, si los analizamos, excepto Delawere, los demás son estados de predominio rural algo que era de esperar.
 
 
 

@@ -4,31 +4,170 @@
 % Texto del capítulo 2
 %---------------------------------------------------
 
-\chapter{Preprocesado}
-\label{preprocesado}
+\chapter{Experimento de datos}
+\label{dos}
 
-El preprocesado de datos es una de las tareas más importantes a las que un científico de datos debe enfrentarse. Esta tarea es de vital importancia y puede desembocar en el éxito o el fracaso de los modelos predictivos que se generen sobre los datos. En este capítulo veremos las técnicas de preprocesado aplicadas sobre nuestros datos. 
+En este capítulo, realizaremos las consultas sobre la base de datos para ello, nos pondremos en lugar de un hipotético científico de datos para obtener información acerca de las quejas de los usuarios.
 
-\section{Integración}
+\section{Creación de la base de datos}
 
-El primer paso es la lectura de datos. Estos vienen en formato texto, por lo que para una correcta lectura deberemos pasar los factores y strings que correspondan a numéricos ya que de otro modo los posibles valores perdidos se etiquetaran como \textbf{cadenas vacías} y podrán repercutir en error. Nos quedamos por tanto en primera instancia con todos los datos numéricos y la fecha de su captación. El motivo de mantener todos los numéricos es mejorar el proceso siguiente de imputación de valores perdidos. 
+Para poder generar las consultas sin interferir con las demás que se realicen en el cluster crearemos una base de datos propia. 
 
-\section{Valores perdidos}
+Para ello, una vez dentro del cluster de Hadoop, primero conectamos a impala-shell. Tras esto, podemos crear la base de datos:
 
-Para la imputación de valores perdidos primero usando la función \textit{sum(is.na) } obtenemos el número de valores perdidos de nuestro variable Tmax, el resultado es 83, por lo que es un número muy a tener en cuenta y que deberá ser predicho. Para la predicción de los valores perdidos nos apoyamos en los demás datos numéricos para hacer regresiones y predicciones, antes de ello, usamos un gráfico de patrón de perdidos para ver si tenemos alguna idea de que otras variables podremos usar para su predicción. El resultado de este gráfico puede verse en la figura \ref{perdidos}.
+{\small
+\begin{verbatim}
+CREATE DATABASE CD_DNI IF NOT EXISTSLOCATION '/user/impala/CD_DNI/impalastore.db';
+\end{verbatim}
+}
+	
+Una vez creada, podemos mostrarla y usarla:
+
+{\small
+\begin{verbatim}
+DESCRIBE CD_DNI
+USE CD_DNI
+\end{verbatim}
+}
+
+\section{Carga de los datos}
+
+Una vez creada la base de datos debemos cargar los datos en la misma, para ello, primero deberemos mandar los datos al HDFS de hadoop.
+
+{\small
+\begin{verbatim}
+hdfs dfs -put ConsumerComplaints.csv /user/impala/CD_DNI/input
+hdfs dfs -ls /user/impala/CD_DNI/input
+\end{verbatim}
+}
+
+Si todo a ido bien, observaremos que la base de datos ahora está en el hdfs de hadoop, por lo que podremos cargar los datos en una tabla, para ello cargamos el impala-shell y usamos (comando USE) nuestra base de datos creada anteriormente. 
+
+{\small
+\begin{verbatim}
+CREATE TABLE IF NOT EXISTS Complaints(DateReceived STRING, 
+ProductName STRING, SubProduct STRING,Issue STRING, SubIssue
+STRING,ConsumerComplaintNarrative STRING,CompanyPublicResponse 
+String, Company STRING, StateName STRING,ZipCode INT, Tags STRING,
+ConsumerConsentProvided STRING,SubmittedVia STRING, DateSenttoCompany
+STRING, CompanyResponsetoConsumer STRING, TimelyResponse STRING,
+ConsumerDisputed STRING, ComplaintID INT) ROW FORMAT DELIMITED FIELDS
+TERMINATED BY '\,' STORED AS TEXTFILE;
+\end{verbatim}
+}
+
+Tras esto  \textbf{cargamos los datos}.
+
+{\small
+\begin{verbatim}
+LOAD DATA INPATH '/user/impala/CD_DNI/input/ConsumerComplaints.csv' 
+OVERWRITE INTO TABLE complaints;
+\end{verbatim}
+}
+
+Tras esto en la figura \ref{1} podemos ver que la carga de datos se ha llevado a cabo correctamente. 
+
 
 \begin{figure}[H]
 	\centering
-		\includegraphics[scale=0.6]{./Capitulo2/imagenes/perdidos.png}
-		\caption{Patrón e histograma de valores perdidos.}
-	\label{perdidos}
+		\includegraphics[scale=0.5]{./Capitulo2/imagenes/1.png}
+		\caption{Carga de datos.}
+	\label{1}
 \end{figure}
 
-Acorde a los resultados de la figura anterior, no podemos concluir que haya un patrón claro pero si podemos asegurar que cuando Tmax tiene un valor perdido las demás también lo tendrán con probabilidad por lo que utilizar regresiones será quizá mala solución, por ello nos decantaremos por el método \textbf{pmm} del paquete MICE. Tras lo cual, tendremos el dataset con una cantidad 0 de valores perdidos en Tmax. 
+\section{Proceso exploratorio}
 
-\section{Agregación}
+Somos nuevos en la compañía y queremos saber:
 
-Este paso del preprocesado es solo necesario para la solución del problema mensual. Para ello, usaremos el comando aggregate y la función max para agregar para cada mes de cada año la mayor temperatura registrada de manera que podamos realizar predicciones y modelado de serie a nivel mensual. Para poder realizar esto, previamente hemos pasado la fecha de tipo string a tipo date y tras ello, hemos eliminado el día de la fecha de manera que podemos agregar por las parejas iguales de mes y año. 
+\textit{\textbf{¿Cuales son las posibles fuentes de queja de nuestros usuarios?}}
+
+{\small
+\begin{verbatim}
+SELECT DIFFERENT SubmittedVia FROM complaints;
+\end{verbatim}
+}
+
+Parece que la salida ofrece más resultados de los que cabría esperar, por lo que de momento, hemos descubierto que la tabla en origen tiene datos de otras columnas introducidos erróneamente. Esto es algo que deberíamos solventar y arreglar en los datos aún así, buscaremos aquellas vías que son más comunes haciendo uso de conteos para evitarnos cierto ruido y dar respuesta a la hipotética pregunta a resolver. 
+
+{\small
+\begin{verbatim}
+SELECT COUNT(*), SubmittedVia FROM complaints 
+	GROUP BY SubmittedVia HAVING COUNT(*) > 300;
+\end{verbatim}
+}
+
+La salida de la consulta  podemos verla en la figura \ref{2}. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.5]{./Capitulo2/imagenes/2.png}
+		\caption{Salida de la consulta 1.}
+	\label{2}
+\end{figure}
+
+Parece que así ya sabemos cuales son las más comunes, igualmente siguen apareciendo algunas que no nos interesan por lo que utilizaremos WHERE para eliminarlas y ordenaremos para crear un ranking de las más usadas. 
+
+{\small
+\begin{verbatim}
+SELECT COUNT(*), SubmittedVia FROM complaints GROUP BY
+SubmittedVia WHERE SubmittedVia IN ('Web', 'Phone', 'Fax', 'Postal mail')
+HAVING COUNT(*) > 300 ORDER BY 1 DESC;
+\end{verbatim}
+}
+
+La salida de la consulta  podemos verla en la figura \ref{3}. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/3.png}
+		\caption{Salida de la consulta 2.}
+	\label{3}
+\end{figure}
+
+
+Ya sabemos cuales son aquellos métodos más usados para comunicarse con la empresa, pero ahora se nos encarga obtener aquellos estados en los cuales la gente usa menos la web para comunicarse con la empresa con el fin de potenciar la publicidad de una nueva aplicación web de la compañía. 
+
+{\small
+\begin{verbatim}
+SELECT COUNT(*), SatateName FROM complaints GROUP BY
+SubmittedVia WHERE SubmittedVia = 'Web' HAVING COUNT(*) < 10;
+\end{verbatim}
+}
+
+La salida de la consulta  podemos verla en la figura \ref{4}. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/4.png}
+		\caption{Salida de la consulta 3.}
+	\label{4}
+\end{figure}
+
+
+Sabemos por tanto que los estados que menos usan la web son: AE (Fuerzas armadas en Africa), 	FM (Los estados de la micronesia), GU (Guam), MH (Las Islas Marshall) y VI  (Islas Virgenes) y AP (Las fuerzas armadas del pacífico).
+
+Esto nos ayuda poco, pues podemos comprobar que son casos aislados de soldados o personas destinadas en islas, y nosotros estamos interesados en los estados más relevantes de estados Unidos donde ofrecer nuestro nuevo producto por ello, exigiremos un mínimo de comunicaciones para evitar estos casos aislados, o outliers en nuestro problema.
+
+
+{\small
+\begin{verbatim}
+SELECT COUNT(*), SatateName FROM complaints GROUP BY
+SubmittedVia WHERE SubmittedVia = 'Web' HAVING COUNT(*) BETWEEN 100 and 200;
+\end{verbatim}
+}
+
+
+La salida de la consulta  podemos verla en la figura \ref{5}. 
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[scale=0.6]{./Capitulo2/imagenes/5.png}
+		\caption{Salida de la consulta 4.}
+	\label{5}
+\end{figure}
+
+El resultado de esta consulta nos dice cuales son aquellos estados que menos usan la web, por lo que aquí deberíamos potenciar nuestro producto, si los analizamos, excepto Delawere, los demás son estados de predominio rural algo que era de esperar.
+
 \pagebreak
 \clearpage
 %---------------------------------------------------
